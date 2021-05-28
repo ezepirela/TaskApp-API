@@ -3,8 +3,10 @@ const tasksModel    =   require('../Models/tasks');
 const controller    =   {
     getTasks : async (req, res) => {
         let tasks;
+        await req.user.populate('tasks').execPopulate();
+        console.log(req.user.tasks)
         try{
-            tasks   =   await tasksModel.find();
+            tasks   =   await req.user.tasks;
         }catch(e){
             res.status(400).send(e);
             return
@@ -12,18 +14,25 @@ const controller    =   {
         res.send(tasks);
     },
     getTasksById: async (req, res) => {
+        const _id = req.params.id
         let tasks;
         try{
-            tasks =  await tasksModel.findById(req.params.id);
+            tasks =  await tasksModel.findOne({_id, creator: req.user._id});
+            if(!tasks){
+                res.status(404).send('error, tasks does not exist');
+            }
         }catch(e){
-            res.status(400).send(e);
+            res.status(500).send(e);
         }
         res.send(tasks);
     },
     createTasks : async (req, res) => {
         let newTask;
         try {
-            newTask = await new tasksModel(req.body);
+            newTask = await new tasksModel({
+                ...req.body,
+                creator: req.user._id
+            });
             await newTask.save();
         }catch(e){
             res.status(400).send(e);

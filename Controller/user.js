@@ -1,8 +1,5 @@
 const userModel     =   require('../Models/user');
 const controller = {
-    saludo: async (req, res) => {
-        res.send('prueba')
-    },
     getUsers: async (req, res) => {
         let users;
         try{
@@ -12,24 +9,40 @@ const controller = {
         }
         res.send(users);
     },
-    getUsersById: async (req, res) => {
-        let users;
-        try{
-         users =  await userModel.findById(req.params.id);
-        }catch(e){
-            res.status(400).send(e);
-        }
-        res.send(users);
-    },
     createUsers: async (req, res) => {
         let newUser;
+        let token;
         try{
             newUser = await new userModel(req.body);
             await newUser.save();
+            token = await newUser.createAuthToken();
         }catch(e){
             res.status(400).send(e);
         }
-        res.status(201).send(newUser);
+        res.status(201).send({newUser, token});
+    },
+    getProfile: async (req, res, next) => {
+        res.send(req.user);
+    },
+    logout: async (req, res, next) => {
+        try {
+            req.user.tokens = req.user.tokens.filter(token => {
+                return token.token !== req.token
+            })
+            await req.user.save()
+        }catch(e){
+            next(new Error('failed to logout'))
+        }
+        res.send('logout')
+    },
+    logoutAll: async (req, res, next) => {
+        try {
+            req.user.tokens =   [{}]
+            await req.user.save();
+        }catch(e){
+            next(new Error('failed to logout'))
+        }
+        res.send('logout')
     },
     updateUser: async (req, res, next) => {
         let users;
@@ -40,28 +53,31 @@ const controller = {
             return next(new Error('invalid updates'))
         }
         try {
-            users = await userModel.findById(req.params.id);
-            updates.forEach(update => users[update] = req.body[update]);
-            await users.save();
-            if(!users){
-                return next(new Error('no user found'));
-            }
+            updates.forEach(update => req.user[update] = req.body[update]);
+            await req.user.save();
         }catch(e){
             return next(new Error(e.message));
         }
-        res.status(200).send(users);
+        res.status(200).send(req.user);
     },
     deleteUser: async (req, res, next) => {
-        let user;
         try {
-            user =   await userModel.findByIdAndDelete(req.params.id);
-            if(!user){
-                return next(new Error('cannot find user'));
-            }
+            await req.user.remove();
         }catch(e){
             return next(new Error(e.message));
         }
         res.status(200).send('deleted user');
+    },
+    login: async (req, res, next) => {
+        let user
+        let token
+        try{
+            user = await userModel.findByCredentials(req.body.email, req.body.password)
+            token = await user.createAuthToken()
+        }catch(e){
+            return next(new Error(e.message));
+        }
+        res.status(200).send({user, token});
     }
 }
 module.exports = controller;
