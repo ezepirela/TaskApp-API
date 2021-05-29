@@ -1,7 +1,8 @@
 const   mongoose    =   require('mongoose'),
         validator   =   require('validator'),
         bcrypt      =   require('bcryptjs'),
-        jwt         =   require('jsonwebtoken');
+        jwt         =   require('jsonwebtoken'),
+        tasksModel  =   require('../Models/tasks');
 
 const userSchema    =   new mongoose.Schema({
     name: {
@@ -86,6 +87,10 @@ userSchema.pre('save', async function(next){
         this.password = await bcrypt.hash(this.password, 8);
     }
     next()
+})
+userSchema.pre('remove', async function(next){
+    await tasksModel.deleteMany({creator: this._id});
+    next();
 })
 const userModel = mongoose.model('User', userSchema);
 module.exports = userModel;

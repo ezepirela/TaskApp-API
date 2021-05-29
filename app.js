@@ -19,7 +19,7 @@ app.use((error, req, res, next) => {
     if(res.headerSent){
         return next(error);
     };
-    res.json({error: error.message, code: error.code})
+    res.status(404).send({error: error.message})
 })
 app.listen(3000, () => {
     console.log('app running')

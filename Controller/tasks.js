@@ -50,26 +50,28 @@ const controller    =   {
         }
         try {
 
-            task = await tasksModel.findById(req.params.id);
-            updates.forEach(update => task[update] = req.body[update]);
-            await task.save();
+            task = await tasksModel.findOne({_id: req.params.id, creator: req.user._id});
             if(!task){
                 return next(new Error('no task found'));
             }
+            updates.forEach(update => task[update] = req.body[update]);
+            await task.save();
+            
         }catch(e){
-            return next(new Error(e.message));
+            return res.status(404).send(e.message)
         }
         res.status(200).send(task);
     },
     deleteTasks: async (req, res, next) => {
         let task;
         try {
-            task =   await tasksModel.findByIdAndDelete(req.params.id);
+            task =   await tasksModel.findOne({_id: req.params.id, creator: req.user._id});
             if(!task){
                 return next(new Error('cannot find task'));
             }
+            await task.remove();
         }catch(e){
-            return next(new Error(e.message));
+            return res.status(404).send(e.message);
         }
         res.status(200).send('deleted task');
     }
