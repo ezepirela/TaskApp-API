@@ -1,4 +1,5 @@
-const userModel     =   require('../Models/user');
+const   userModel     =   require('../Models/user'),
+        sharp       =   require('sharp');
 const controller = {
     getUsers: async (req, res) => {
         let users;
@@ -45,7 +46,6 @@ const controller = {
         res.send('logout')
     },
     updateUser: async (req, res, next) => {
-        let users;
         const updates   =   Object.keys(req.body);
         const allowedUpdates    =   ['name', 'email', 'age', 'password'];
         const isValidOperation    =   updates.every(update => allowedUpdates.includes(update));
@@ -78,6 +78,29 @@ const controller = {
             return next(new Error(e.message));
         }
         res.status(200).send({user, token});
+    }, 
+    uploadImage: async (req, res, next) => {
+        const buffer = await sharp(req.file.buffer).resize({width: 250, height: 250}).png().toBuffer()
+        req.user.avatar = buffer;
+        await req.user.save()
+        res.send('image take it')
+    },
+    deleteImage: async (req, res, next) => {
+        req.user.avatar = undefined;
+        await req.user.save();
+        res.send('image removed');
+    }, 
+    getAvatarImage: async (req, res, next) => {
+        try{
+            const user = await userModel.findById(req.params.id);
+            if(!user || !user.avatar){
+                return next(new Error('user not found'))
+            }
+            res.set('Content-Type', 'image/png')
+            res.send(user.avatar);
+        }catch(e){
+            res.status(404).send(e.message)
+        }
     }
 }
 module.exports = controller;

@@ -48,6 +48,9 @@ const userSchema    =   new mongoose.Schema({
                 throw new Error('email is not valid')
             }
         }
+    }, 
+    avatar: {
+        type: Buffer
     }
 }, {
     timestamps: true
@@ -65,6 +68,7 @@ userSchema.methods.toJSON = function(){
     const userObject = this.toObject();
     delete userObject.password;
     delete userObject.tokens;
+    delete userObject.avatar;
     return userObject
 }
 userSchema.methods.createAuthToken  =   async function(){
