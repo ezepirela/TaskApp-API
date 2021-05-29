@@ -3,8 +3,24 @@ const tasksModel    =   require('../Models/tasks');
 const controller    =   {
     getTasks : async (req, res) => {
         let tasks;
-        await req.user.populate('tasks').execPopulate();
-        console.log(req.user.tasks)
+        let match = {};
+        let sort = {};
+        if(req.query.completed){
+            match.completed = req.query.completed === 'true' 
+        }
+        if(req.query.sortBy){
+            splitString = req.query.sortBy.split(':');
+            sort[splitString[0]] = splitString[1] === 'desc' ? -1 : 1;
+        }
+        await req.user.populate({
+            path: 'tasks',
+            match,
+            options: {
+                limit: parseInt(req.query.limit),
+                skip: parseInt(req.query.skip),
+                sort
+            }
+        }).execPopulate();
         try{
             tasks   =   await req.user.tasks;
         }catch(e){
