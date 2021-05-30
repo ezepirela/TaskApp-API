@@ -1,5 +1,6 @@
-const   userModel     =   require('../Models/user'),
-        sharp       =   require('sharp');
+const   userModel           =   require('../Models/user'),
+        sharp               =   require('sharp'),
+        { sendWelcomeEmail, sendFarewellEmail }    =   require('../emails/account');
 const controller = {
     getUsers: async (req, res) => {
         let users;
@@ -15,10 +16,11 @@ const controller = {
         let token;
         try{
             newUser = await new userModel(req.body);
+            sendWelcomeEmail(newUser.email, newUser.name);
             await newUser.save();
             token = await newUser.createAuthToken();
         }catch(e){
-            res.status(400).send(e);
+            return res.status(400).send(e.message);
         }
         res.status(201).send({newUser, token});
     },
@@ -63,6 +65,7 @@ const controller = {
     deleteUser: async (req, res, next) => {
         try {
             await req.user.remove();
+            await sendFarewellEmail(req.user.email, req.user.name);
         }catch(e){
             return next(new Error(e.message));
         }
