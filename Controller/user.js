@@ -25,7 +25,7 @@ const controller = {
         res.status(201).send({newUser, token});
     },
     getProfile: async (req, res, next) => {
-        res.send(req.user);
+        res.status(200).send(req.user);
     },
     logout: async (req, res, next) => {
         try {
@@ -60,7 +60,7 @@ const controller = {
         }catch(e){
             return next(new Error(e.message));
         }
-        res.status(200).send(req.user);
+        res.status(200).send({user: req.user});
     },
     deleteUser: async (req, res, next) => {
         try {
@@ -86,7 +86,7 @@ const controller = {
         const buffer = await sharp(req.file.buffer).resize({width: 250, height: 250}).png().toBuffer()
         req.user.avatar = buffer;
         await req.user.save()
-        res.send('image take it')
+        res.status(200).send('image take it')
     },
     deleteImage: async (req, res, next) => {
         req.user.avatar = undefined;

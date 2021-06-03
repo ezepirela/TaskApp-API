@@ -54,7 +54,7 @@ const controller    =   {
             res.status(400).send(e);
             return
         }
-        res.status(201).send(newTask);
+        res.status(201).send({task: newTask});
     },
     updateTasks: async (req, res, next) =>{
         let task;
